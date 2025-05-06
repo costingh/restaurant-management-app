@@ -16,7 +16,7 @@ import { Search, Store } from "lucide-react";
 
 export default function Home() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCuisine, setSelectedCuisine] = useState("");
+  const [selectedCuisine, setSelectedCuisine] = useState("all");
 
   // Fetch restaurants
   const { data: restaurants = [], isLoading } = useQuery<Restaurant[]>({
@@ -37,7 +37,7 @@ export default function Home() {
       restaurant.location.toLowerCase().includes(searchQuery.toLowerCase());
 
     const matchesCuisine =
-      selectedCuisine === "" || restaurant.cuisine === selectedCuisine;
+      selectedCuisine === "all" || restaurant.cuisine === selectedCuisine;
 
     return matchesSearch && matchesCuisine;
   });
@@ -73,7 +73,7 @@ export default function Home() {
               <SelectValue placeholder="All cuisines" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All cuisines</SelectItem>
+              <SelectItem value="all">All cuisines</SelectItem>
               {cuisines.map((cuisine, index) => (
                 <SelectItem key={index} value={cuisine}>
                   {cuisine}
@@ -85,7 +85,7 @@ export default function Home() {
       </section>
 
       {/* Active filters */}
-      {(searchQuery || selectedCuisine) && (
+      {(searchQuery || selectedCuisine !== "all") && (
         <div className="mb-6 flex flex-wrap gap-2">
           {searchQuery && (
             <Badge variant="secondary" className="gap-1">
@@ -98,12 +98,12 @@ export default function Home() {
               </button>
             </Badge>
           )}
-          {selectedCuisine && (
+          {selectedCuisine && selectedCuisine !== "all" && (
             <Badge variant="secondary" className="gap-1">
               Cuisine: {selectedCuisine}
               <button
                 className="ml-1"
-                onClick={() => setSelectedCuisine("")}
+                onClick={() => setSelectedCuisine("all")}
               >
                 ×
               </button>
