@@ -5,7 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
-import { LoginFormData } from "@/lib/types";
+import { LoginFormData, User } from "@/lib/types";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -38,7 +38,7 @@ export default function Login() {
     },
   });
 
-  const loginMutation = useMutation({
+  const loginMutation = useMutation<User, Error, LoginFormData>({
     mutationFn: async (data: LoginFormData) => {
       const response = await apiRequest("POST", "/api/login", data);
       return response.json();
