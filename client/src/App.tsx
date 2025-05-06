@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/home";
+import Login from "@/pages/login";
 import RestaurantDetails from "@/pages/restaurant-details";
 import AdminDashboard from "@/pages/admin/dashboard";
 import AdminRestaurants from "@/pages/admin/restaurants";
@@ -15,6 +16,7 @@ function Router() {
     <Switch>
       {/* Public routes */}
       <Route path="/" component={Home} />
+      <Route path="/login" component={Login} />
       <Route path="/restaurants/:id" component={RestaurantDetails} />
       
       {/* Admin routes */}
