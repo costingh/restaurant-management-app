@@ -1,5 +1,6 @@
 import { pgTable, text, serial, integer, boolean, timestamp } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
+import { relations } from "drizzle-orm";
 import { z } from "zod";
 
 // User table and schema
@@ -28,6 +29,10 @@ export const restaurants = pgTable("restaurants", {
   imageUrl: text("image_url"),
 });
 
+export const restaurantsRelations = relations(restaurants, ({ many }) => ({
+  menuItems: many(menuItems),
+}));
+
 export const insertRestaurantSchema = createInsertSchema(restaurants).pick({
   name: true,
   cuisine: true,
@@ -41,13 +46,20 @@ export const insertRestaurantSchema = createInsertSchema(restaurants).pick({
 // Menu item table and schema
 export const menuItems = pgTable("menu_items", {
   id: serial("id").primaryKey(),
-  restaurantId: integer("restaurant_id").notNull(),
+  restaurantId: integer("restaurant_id").notNull().references(() => restaurants.id, { onDelete: 'cascade' }),
   name: text("name").notNull(),
   description: text("description"),
   price: text("price").notNull(),
   category: text("category").notNull(),
   imageUrl: text("image_url"),
 });
+
+export const menuItemsRelations = relations(menuItems, ({ one }) => ({
+  restaurant: one(restaurants, {
+    fields: [menuItems.restaurantId],
+    references: [restaurants.id],
+  }),
+}));
 
 export const insertMenuItemSchema = createInsertSchema(menuItems).pick({
   restaurantId: true,

@@ -9,6 +9,8 @@ import {
   type MenuItem,
   type InsertMenuItem
 } from "@shared/schema";
+import { db } from "./db";
+import { eq, and } from "drizzle-orm";
 
 // Storage interface with CRUD operations
 export interface IStorage {
@@ -33,137 +35,136 @@ export interface IStorage {
   deleteMenuItem(id: number): Promise<boolean>;
 }
 
-// In-memory storage implementation
-export class MemStorage implements IStorage {
-  private users: Map<number, User>;
-  private restaurants: Map<number, Restaurant>;
-  private menuItems: Map<number, MenuItem>;
-  
-  private userIdCounter: number = 1;
-  private restaurantIdCounter: number = 1;
-  private menuItemIdCounter: number = 1;
-
+// Database storage implementation
+export class DatabaseStorage implements IStorage {
   constructor() {
-    this.users = new Map();
-    this.restaurants = new Map();
-    this.menuItems = new Map();
+    // Initialize the database with a default admin user and example restaurants
+    this.initializeData();
+  }
 
-    // Create a default admin user
-    this.createUser({
-      username: "admin",
-      password: "admin123",
-      isAdmin: true
-    });
+  private async initializeData() {
+    try {
+      // Check if we have users, if not add a default admin
+      const existingUsers = await db.select().from(users);
+      if (existingUsers.length === 0) {
+        await this.createUser({
+          username: "admin",
+          password: "admin123",
+          isAdmin: true
+        });
+      }
+      
+      // Check if we have restaurants, if not add example restaurants
+      const existingRestaurants = await db.select().from(restaurants);
+      if (existingRestaurants.length === 0) {
+        await this.createRestaurant({
+          name: "The Italian Place",
+          cuisine: "Italian",
+          location: "123 Main St, Anytown",
+          phone: "(555) 123-4567",
+          openingHours: "Mon-Sat: 11:00 AM - 10:00 PM, Sun: 12:00 PM - 9:00 PM",
+          description: "Authentic Italian cuisine in a cozy atmosphere.",
+          imageUrl: "/images/italian.jpg"
+        });
 
-    // Create some sample restaurants for initial data
-    this.createRestaurant({
-      name: "The Italian Place",
-      cuisine: "Italian",
-      location: "123 Main St, Anytown",
-      phone: "(555) 123-4567",
-      openingHours: "Mon-Sat: 11:00 AM - 10:00 PM, Sun: 12:00 PM - 9:00 PM",
-      description: "Authentic Italian cuisine in a cozy atmosphere.",
-      imageUrl: "/images/italian.jpg"
-    });
-
-    this.createRestaurant({
-      name: "Sushi Express",
-      cuisine: "Japanese",
-      location: "456 Oak Ave, Anytown",
-      phone: "(555) 987-6543",
-      openingHours: "Mon-Sun: 11:30 AM - 9:30 PM",
-      description: "Fresh sushi and Japanese specialties.",
-      imageUrl: "/images/sushi.jpg"
-    });
+        await this.createRestaurant({
+          name: "Sushi Express",
+          cuisine: "Japanese",
+          location: "456 Oak Ave, Anytown",
+          phone: "(555) 987-6543",
+          openingHours: "Mon-Sun: 11:30 AM - 9:30 PM",
+          description: "Fresh sushi and Japanese specialties.",
+          imageUrl: "/images/sushi.jpg"
+        });
+      }
+    } catch (error) {
+      console.error("Error initializing database data:", error);
+    }
   }
 
   // User operations
   async getUser(id: number): Promise<User | undefined> {
-    return this.users.get(id);
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user;
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username === username
-    );
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user;
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const id = this.userIdCounter++;
-    const user: User = { id, ...insertUser };
-    this.users.set(id, user);
+    const [user] = await db.insert(users).values(insertUser).returning();
     return user;
   }
 
   // Restaurant operations
   async getAllRestaurants(): Promise<Restaurant[]> {
-    return Array.from(this.restaurants.values());
+    return await db.select().from(restaurants);
   }
 
   async getRestaurant(id: number): Promise<Restaurant | undefined> {
-    return this.restaurants.get(id);
+    const [restaurant] = await db.select().from(restaurants).where(eq(restaurants.id, id));
+    return restaurant;
   }
 
   async createRestaurant(insertRestaurant: InsertRestaurant): Promise<Restaurant> {
-    const id = this.restaurantIdCounter++;
-    const restaurant: Restaurant = { id, ...insertRestaurant };
-    this.restaurants.set(id, restaurant);
+    const [restaurant] = await db.insert(restaurants).values(insertRestaurant).returning();
     return restaurant;
   }
 
   async updateRestaurant(id: number, updateData: Partial<InsertRestaurant>): Promise<Restaurant | undefined> {
-    const restaurant = this.restaurants.get(id);
-    if (!restaurant) return undefined;
-
-    const updatedRestaurant = { ...restaurant, ...updateData };
-    this.restaurants.set(id, updatedRestaurant);
+    const [updatedRestaurant] = await db
+      .update(restaurants)
+      .set(updateData)
+      .where(eq(restaurants.id, id))
+      .returning();
+    
     return updatedRestaurant;
   }
 
   async deleteRestaurant(id: number): Promise<boolean> {
-    // Also delete related menu items
-    const relatedMenuItems = Array.from(this.menuItems.values())
-      .filter(item => item.restaurantId === id)
-      .map(item => item.id);
-    
-    relatedMenuItems.forEach(itemId => this.menuItems.delete(itemId));
-    
-    return this.restaurants.delete(id);
+    // Menu items will be automatically deleted due to CASCADE constraint
+    const result = await db.delete(restaurants).where(eq(restaurants.id, id)).returning();
+    return result.length > 0;
   }
 
   // Menu item operations
   async getAllMenuItems(): Promise<MenuItem[]> {
-    return Array.from(this.menuItems.values());
+    return await db.select().from(menuItems);
   }
 
   async getMenuItemsByRestaurant(restaurantId: number): Promise<MenuItem[]> {
-    return Array.from(this.menuItems.values())
-      .filter(item => item.restaurantId === restaurantId);
+    return await db
+      .select()
+      .from(menuItems)
+      .where(eq(menuItems.restaurantId, restaurantId));
   }
 
   async getMenuItem(id: number): Promise<MenuItem | undefined> {
-    return this.menuItems.get(id);
+    const [menuItem] = await db.select().from(menuItems).where(eq(menuItems.id, id));
+    return menuItem;
   }
 
   async createMenuItem(insertMenuItem: InsertMenuItem): Promise<MenuItem> {
-    const id = this.menuItemIdCounter++;
-    const menuItem: MenuItem = { id, ...insertMenuItem };
-    this.menuItems.set(id, menuItem);
+    const [menuItem] = await db.insert(menuItems).values(insertMenuItem).returning();
     return menuItem;
   }
 
   async updateMenuItem(id: number, updateData: Partial<InsertMenuItem>): Promise<MenuItem | undefined> {
-    const menuItem = this.menuItems.get(id);
-    if (!menuItem) return undefined;
-
-    const updatedMenuItem = { ...menuItem, ...updateData };
-    this.menuItems.set(id, updatedMenuItem);
+    const [updatedMenuItem] = await db
+      .update(menuItems)
+      .set(updateData)
+      .where(eq(menuItems.id, id))
+      .returning();
+    
     return updatedMenuItem;
   }
 
   async deleteMenuItem(id: number): Promise<boolean> {
-    return this.menuItems.delete(id);
+    const result = await db.delete(menuItems).where(eq(menuItems.id, id)).returning();
+    return result.length > 0;
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();
