@@ -16,7 +16,7 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-// Create services
+// Create services (using NestJS services)
 const databaseService = new DatabaseService();
 const usersService = new UsersService(databaseService);
 const authService = new AuthService(usersService);
@@ -44,8 +44,12 @@ passport.use(localStrategy);
 
 // Configure session serializer
 const sessionSerializer = new SessionSerializer(usersService);
-passport.serializeUser(sessionSerializer.serializeUser.bind(sessionSerializer));
-passport.deserializeUser(sessionSerializer.deserializeUser.bind(sessionSerializer));
+passport.serializeUser((user: any, done: Function) => {
+  sessionSerializer.serializeUser(user, done);
+});
+passport.deserializeUser((id: number, done: Function) => {
+  sessionSerializer.deserializeUser(id, done);
+});
 
 // Logging middleware
 app.use((req, res, next) => {

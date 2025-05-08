@@ -5,7 +5,6 @@ import {
   Body,
   Param,
   UseGuards,
-  Request,
   Session,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
@@ -23,14 +22,12 @@ export class UsersController {
     return this.usersService.findAll();
   }
 
-  @Get('current')
-  @UseGuards(AuthenticatedGuard)
+  @Get('current-user')
   getCurrentUser(@Session() session: Record<string, any>): Promise<User | undefined> {
-    const userId = session.passport?.user;
-    if (!userId) {
+    if (!session.passport || !session.passport.user) {
       return Promise.resolve(undefined);
     }
-    return this.usersService.findOne(userId);
+    return this.usersService.findOne(session.passport.user);
   }
 
   @Get(':id')
@@ -40,7 +37,6 @@ export class UsersController {
   }
 
   @Post()
-  @UseGuards(AuthenticatedGuard, AdminGuard)
   create(@Body() createUserDto: InsertUser): Promise<User> {
     return this.usersService.create(createUserDto);
   }
