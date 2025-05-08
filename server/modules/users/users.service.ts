@@ -1,19 +1,24 @@
 import { Injectable } from '@nestjs/common';
 import { DatabaseService } from '../database/database.service';
-import { type User, type InsertUser } from '../../../shared/schema';
+import { User, InsertUser } from '../../../shared/schema';
 
 @Injectable()
 export class UsersService {
   constructor(private readonly databaseService: DatabaseService) {}
 
   async findAll(): Promise<User[]> {
-    // This is just a placeholder as we don't have a getAllUsers method in DatabaseService
-    // In a real app, you might want to add this method or implement pagination
-    return [];
+    // In a real application, you might want to filter out passwords
+    const users = await this.databaseService.getAllUsers();
+    return users.map(({ password, ...rest }) => rest as User);
   }
 
   async findOne(id: number): Promise<User | undefined> {
-    return this.databaseService.getUser(id);
+    const user = await this.databaseService.getUser(id);
+    if (!user) return undefined;
+    
+    // Remove password from returned user
+    const { password, ...result } = user;
+    return result as User;
   }
 
   async findByUsername(username: string): Promise<User | undefined> {
@@ -21,6 +26,10 @@ export class UsersService {
   }
 
   async create(createUserDto: InsertUser): Promise<User> {
-    return this.databaseService.createUser(createUserDto);
+    const user = await this.databaseService.createUser(createUserDto);
+    
+    // Remove password from returned user
+    const { password, ...result } = user;
+    return result as User;
   }
 }

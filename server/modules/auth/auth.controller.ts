@@ -1,44 +1,43 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  UseGuards,
-  Req,
-  Res,
-  HttpCode,
-  HttpStatus,
+import { 
+  Controller, 
+  Post, 
+  UseGuards, 
+  Request, 
+  Body, 
+  Get, 
+  Res
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LocalAuthGuard } from './guards/local-auth.guard';
 import { AuthenticatedGuard } from './guards/authenticated.guard';
 import { LoginDto } from './dto/login.dto';
-import { Request, Response } from 'express';
 import { User } from '../../../shared/schema';
+import { Response } from 'express';
 
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
-
-  @UseGuards(LocalAuthGuard)
+  
   @Post('login')
-  @HttpCode(HttpStatus.OK)
-  async login(@Req() req: Request, @Body() _loginDto: LoginDto): Promise<User> {
-    return req.user as User;
+  @UseGuards(LocalAuthGuard)
+  async login(@Request() req: any, @Body() _loginDto: LoginDto): Promise<User> {
+    // _loginDto is not used here because Passport handles the authentication
+    return req.user;
   }
-
-  @UseGuards(AuthenticatedGuard)
+  
   @Post('logout')
-  @HttpCode(HttpStatus.OK)
-  async logout(@Req() req: Request, @Res() res: Response): Promise<void> {
-    req.logout(() => {
-      res.status(HttpStatus.OK).json({ message: 'Logged out successfully' });
+  async logout(@Request() req: any, @Res() res: Response): Promise<void> {
+    req.logout((err: any) => {
+      if (err) {
+        console.error('Logout error:', err);
+      }
+      res.status(200).json({ message: 'Logged out successfully' });
     });
   }
-
-  @UseGuards(AuthenticatedGuard)
+  
   @Get('profile')
-  getProfile(@Req() req: Request): User {
-    return req.user as User;
+  @UseGuards(AuthenticatedGuard)
+  getProfile(@Request() req: any): User {
+    return req.user;
   }
 }
