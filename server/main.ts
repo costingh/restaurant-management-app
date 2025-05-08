@@ -3,13 +3,20 @@ import { AppModule } from './app.module';
 import { ValidationPipe, Logger } from '@nestjs/common';
 import session from 'express-session';
 import passport from 'passport';
-import { serveStatic } from './vite-adapter';
 import { Express, Request, Response, NextFunction } from 'express';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
   const app = await NestFactory.create(AppModule);
   const expressApp = app.getHttpAdapter().getInstance() as Express;
+  
+  // Enable CORS for the frontend
+  app.enableCors({
+    origin: 'http://localhost:3000', // Your frontend URL
+    credentials: true, // Important for cookies/session
+    methods: ['GET', 'PUT', 'POST', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  });
   
   // Middleware
   app.use(session({
@@ -19,6 +26,8 @@ async function bootstrap() {
     cookie: {
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
       httpOnly: true,
+      sameSite: 'lax', // Helps with CSRF
+      secure: process.env.NODE_ENV === 'production', // Use secure cookies in production
     }
   }));
   
@@ -40,18 +49,16 @@ async function bootstrap() {
 
     res.on("finish", () => {
       const duration = Date.now() - start;
-      if (path.startsWith("/api")) {
-        let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
-        if (capturedJsonResponse) {
-          logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
-        }
-
-        if (logLine.length > 80) {
-          logLine = logLine.slice(0, 79) + "…";
-        }
-
-        logger.log(logLine);
+      let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
+      if (capturedJsonResponse) {
+        logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
       }
+
+      if (logLine.length > 80) {
+        logLine = logLine.slice(0, 79) + "…";
+      }
+
+      logger.log(logLine);
     });
 
     next();
@@ -77,13 +84,10 @@ async function bootstrap() {
   // Prefix all API routes
   app.setGlobalPrefix('api');
   
-  // Serve static files 
-  await serveStatic(app);
-  
-  // Start application
-  const port = process.env.PORT || 5000;
+  // Start application on a different port than the frontend
+  const port = process.env.API_PORT || 4000;
   await app.listen(port, '0.0.0.0');
-  logger.log(`Application is running on port ${port}`);
+  logger.log(`API server running on port ${port}`);
 }
 
 bootstrap();
