@@ -12,7 +12,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { StarRating } from "@/components/star-rating";
+import { StarRating } from "./star-rating";
 
 // Define review form schema
 const reviewFormSchema = z.object({
@@ -98,7 +98,7 @@ export function ReviewForm({ restaurantId, userId, onSuccess, review }: ReviewFo
                   <FormControl>
                     <StarRating 
                       rating={rating} 
-                      setRating={(value) => {
+                      setRating={(value: number) => {
                         setRating(value);
                         field.onChange(value);
                       }}
