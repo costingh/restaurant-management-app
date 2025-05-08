@@ -1,11 +1,10 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { useLocation } from "wouter";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import { useMutation } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
-import { LoginFormData, User } from "@/lib/types";
+import { InsertUser, User as UserType } from "@shared/schema";
+import { useAuth } from "@/hooks/use-auth";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -18,19 +17,38 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { useToast } from "@/hooks/use-toast";
 import { Utensils } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
+type LoginFormData = Pick<InsertUser, "username" | "password">;
 
 const loginSchema = z.object({
   username: z.string().min(1, "Username is required"),
   password: z.string().min(1, "Password is required"),
 });
 
+const registerSchema = loginSchema.extend({
+  confirmPassword: z.string().min(1, "Please confirm your password"),
+  isAdmin: z.boolean().default(false),
+}).refine(data => data.password === data.confirmPassword, {
+  message: "Passwords don't match",
+  path: ["confirmPassword"],
+});
+
+type RegisterFormData = z.infer<typeof registerSchema>;
+
 export default function Login() {
   const [, setLocation] = useLocation();
-  const { toast } = useToast();
+  const { user, loginMutation, registerMutation } = useAuth();
 
-  const form = useForm<LoginFormData>({
+  // If user is already logged in, redirect them
+  useEffect(() => {
+    if (user) {
+      setLocation(user.isAdmin ? "/admin" : "/");
+    }
+  }, [user, setLocation]);
+
+  const loginForm = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
       username: "",
@@ -38,28 +56,23 @@ export default function Login() {
     },
   });
 
-  const loginMutation = useMutation<User, Error, LoginFormData>({
-    mutationFn: async (data: LoginFormData) => {
-      return apiRequest<User>("POST", "/api/login", data);
-    },
-    onSuccess: (data) => {
-      toast({
-        title: "Login successful",
-        description: `Welcome back, ${data.username}!`,
-      });
-      setLocation(data.isAdmin ? "/admin" : "/");
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Login failed",
-        description: error.message || "Invalid credentials",
-        variant: "destructive",
-      });
+  const registerForm = useForm<RegisterFormData>({
+    resolver: zodResolver(registerSchema),
+    defaultValues: {
+      username: "",
+      password: "",
+      confirmPassword: "",
+      isAdmin: false,
     },
   });
 
-  const onSubmit = (data: LoginFormData) => {
+  const onLoginSubmit = (data: LoginFormData) => {
     loginMutation.mutate(data);
+  };
+
+  const onRegisterSubmit = (data: RegisterFormData) => {
+    const { confirmPassword, ...registrationData } = data;
+    registerMutation.mutate(registrationData);
   };
 
   return (
@@ -72,49 +85,111 @@ export default function Login() {
         
         <Card>
           <CardHeader>
-            <CardTitle>Login</CardTitle>
+            <CardTitle>Authentication</CardTitle>
             <CardDescription>
-              Enter your credentials to access the dashboard
+              Login or create a new account to access the platform
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="username"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Username</FormLabel>
-                      <FormControl>
-                        <Input placeholder="admin" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="password"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Password</FormLabel>
-                      <FormControl>
-                        <Input type="password" placeholder="••••••••" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <Button 
-                  type="submit" 
-                  className="w-full"
-                  disabled={loginMutation.isPending}
-                >
-                  {loginMutation.isPending ? "Logging in..." : "Log in"}
-                </Button>
-              </form>
-            </Form>
+            <Tabs defaultValue="login" className="w-full">
+              <TabsList className="grid w-full grid-cols-2 mb-4">
+                <TabsTrigger value="login">Login</TabsTrigger>
+                <TabsTrigger value="register">Register</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="login">
+                <Form {...loginForm}>
+                  <form onSubmit={loginForm.handleSubmit(onLoginSubmit)} className="space-y-4">
+                    <FormField
+                      control={loginForm.control}
+                      name="username"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Username</FormLabel>
+                          <FormControl>
+                            <Input placeholder="admin" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={loginForm.control}
+                      name="password"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Password</FormLabel>
+                          <FormControl>
+                            <Input type="password" placeholder="••••••••" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <Button 
+                      type="submit" 
+                      className="w-full"
+                      disabled={loginMutation.isPending}
+                    >
+                      {loginMutation.isPending ? "Logging in..." : "Log in"}
+                    </Button>
+                  </form>
+                </Form>
+              </TabsContent>
+              
+              <TabsContent value="register">
+                <Form {...registerForm}>
+                  <form onSubmit={registerForm.handleSubmit(onRegisterSubmit)} className="space-y-4">
+                    <FormField
+                      control={registerForm.control}
+                      name="username"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Username</FormLabel>
+                          <FormControl>
+                            <Input placeholder="johndoe" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={registerForm.control}
+                      name="password"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Password</FormLabel>
+                          <FormControl>
+                            <Input type="password" placeholder="••••••••" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={registerForm.control}
+                      name="confirmPassword"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Confirm Password</FormLabel>
+                          <FormControl>
+                            <Input type="password" placeholder="••••••••" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <Button 
+                      type="submit" 
+                      className="w-full"
+                      disabled={registerMutation.isPending}
+                    >
+                      {registerMutation.isPending ? "Creating account..." : "Create Account"}
+                    </Button>
+                  </form>
+                </Form>
+              </TabsContent>
+            </Tabs>
           </CardContent>
           <CardFooter className="flex justify-center text-sm text-muted-foreground">
             <p>

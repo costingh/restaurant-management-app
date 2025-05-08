@@ -3,8 +3,9 @@
  * 
  * This is the root component of the application that sets up:
  * 1. React Query for data fetching
- * 2. Application routing using Wouter
- * 3. Toast notifications and tooltips
+ * 2. Authentication context and protected routes
+ * 3. Application routing using Wouter
+ * 4. Toast notifications and tooltips
  * 
  * The application has two main sections:
  * - Public-facing pages for viewing restaurants and reviews
@@ -16,6 +17,8 @@ import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { AuthProvider } from "@/hooks/use-auth";
+import { ProtectedRoute } from "@/lib/protected-route";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/home";
 import Login from "@/pages/login";
@@ -28,9 +31,10 @@ import AdminMenuItems from "@/pages/admin/menu-items";
  * Router Component
  * 
  * Defines the application's routing structure using wouter.
- * The routes are organized into two sections:
+ * The routes are organized into three sections:
  * 1. Public routes - accessible to all users
- * 2. Admin routes - accessible to authenticated admin users
+ * 2. Protected routes - accessible to authenticated users
+ * 3. Admin routes - accessible to authenticated admin users
  * 
  * @returns A React component containing all the application routes
  */
@@ -42,10 +46,10 @@ function Router() {
       <Route path="/login" component={Login} />
       <Route path="/restaurants/:id" component={RestaurantDetails} />
       
-      {/* Admin routes */}
-      <Route path="/admin" component={AdminDashboard} />
-      <Route path="/admin/restaurants" component={AdminRestaurants} />
-      <Route path="/admin/menu-items" component={AdminMenuItems} />
+      {/* Admin routes - protected and require admin role */}
+      <ProtectedRoute path="/admin" component={AdminDashboard} adminOnly />
+      <ProtectedRoute path="/admin/restaurants" component={AdminRestaurants} adminOnly />
+      <ProtectedRoute path="/admin/menu-items" component={AdminMenuItems} adminOnly />
       
       {/* Fallback to 404 */}
       <Route component={NotFound} />
@@ -59,6 +63,7 @@ function Router() {
  * Sets up the global providers and renders the Router component.
  * This component wraps the entire application with necessary providers:
  * - QueryClientProvider: For React Query data fetching
+ * - AuthProvider: For authentication state management
  * - TooltipProvider: For UI tooltips
  * - Toaster: For toast notifications
  * 
@@ -67,10 +72,12 @@ function Router() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Router />
-      </TooltipProvider>
+      <AuthProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Router />
+        </TooltipProvider>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }
