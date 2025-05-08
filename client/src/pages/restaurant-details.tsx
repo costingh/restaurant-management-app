@@ -1,7 +1,7 @@
-import React from "react";
+import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useRoute } from "wouter";
-import { Restaurant, MenuItem } from "@/lib/types";
+import { Restaurant, MenuItem, Review, User } from "@/lib/types";
 import { Layout } from "@/components/layout";
 import {
   Card,
@@ -14,12 +14,15 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, MapPin, Clock, Phone, Utensils } from "lucide-react";
+import { ArrowLeft, MapPin, Clock, Phone, Utensils, Star } from "lucide-react";
 import { Link } from "wouter";
+import { ReviewForm } from "@/components/review-form";
+import { ReviewList } from "@/components/review-list";
 
 export default function RestaurantDetails() {
   const [, params] = useRoute("/restaurants/:id");
   const restaurantId = params?.id ? parseInt(params.id) : -1;
+  const [reviewToEdit, setReviewToEdit] = useState<Review | null>(null);
 
   // Fetch restaurant details
   const { data: restaurant, isLoading: isLoadingRestaurant } = useQuery<Restaurant>({
@@ -31,6 +34,22 @@ export default function RestaurantDetails() {
   const { data: menuItems = [], isLoading: isLoadingMenuItems } = useQuery<MenuItem[]>({
     queryKey: [`/api/menu-items?restaurantId=${restaurantId}`],
     enabled: restaurantId > 0,
+  });
+  
+  // Fetch current user
+  const { data: currentUser } = useQuery<User | null>({
+    queryKey: ['/api/current-user'],
+    queryFn: async () => {
+      try {
+        const res = await fetch('/api/current-user');
+        if (res.status === 401) return null;
+        if (!res.ok) throw new Error('Failed to fetch current user');
+        return res.json();
+      } catch (error) {
+        console.error('Error fetching current user:', error);
+        return null;
+      }
+    },
   });
 
   // Group menu items by category
@@ -198,6 +217,56 @@ export default function RestaurantDetails() {
               </CardContent>
             </Card>
           )}
+        </div>
+
+        {/* Reviews section */}
+        <div className="mt-8">
+          <div className="flex items-center gap-2 mb-4">
+            <Star className="h-5 w-5 text-primary" />
+            <h2 className="text-2xl font-semibold tracking-tight">Reviews</h2>
+          </div>
+
+          {currentUser ? (
+            <div className="mb-8">
+              {reviewToEdit ? (
+                <>
+                  <h3 className="text-lg font-medium mb-4">Edit Your Review</h3>
+                  <ReviewForm
+                    restaurantId={restaurantId}
+                    userId={currentUser.id}
+                    review={reviewToEdit}
+                    onSuccess={() => setReviewToEdit(null)}
+                  />
+                </>
+              ) : (
+                <>
+                  <h3 className="text-lg font-medium mb-4">Write a Review</h3>
+                  <ReviewForm 
+                    restaurantId={restaurantId}
+                    userId={currentUser.id}
+                    onSuccess={() => {}}
+                  />
+                </>
+              )}
+            </div>
+          ) : (
+            <Card className="mb-8">
+              <CardContent className="p-6 text-center">
+                <p className="mb-4">Please log in to write a review</p>
+                <Button asChild variant="outline">
+                  <Link href="/login">
+                    Log In
+                  </Link>
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+
+          <ReviewList 
+            restaurantId={restaurantId}
+            currentUser={currentUser}
+            onEditReview={(review) => setReviewToEdit(review)}
+          />
         </div>
       </div>
     </Layout>
