@@ -14,7 +14,7 @@ class UpdateReviewDto implements Partial<InsertReview> {
   content?: string;
 }
 
-@Controller('api/reviews')
+@Controller('reviews')
 export class ReviewsController {
   constructor(private readonly reviewsService: ReviewsService) {}
 
