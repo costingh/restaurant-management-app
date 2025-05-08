@@ -8,10 +8,24 @@ async function throwIfResNotOk(res: Response) {
 }
 
 export async function apiRequest<T = Response>(
-  url: string,
-  method: string = "GET",
+  urlOrMethod: string,
+  methodOrUrl?: string,
   data?: unknown | undefined,
 ): Promise<T> {
+  // Handle both parameter orders to maintain backward compatibility
+  let method: string;
+  let url: string;
+  
+  if (urlOrMethod.startsWith('/')) {
+    // First param is URL (new style)
+    url = urlOrMethod;
+    method = methodOrUrl || "GET";
+  } else {
+    // First param is method (old style)
+    method = urlOrMethod;
+    url = methodOrUrl || "";
+  }
+
   const res = await fetch(url, {
     method,
     headers: data ? { "Content-Type": "application/json" } : {},
