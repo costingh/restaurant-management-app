@@ -1,12 +1,10 @@
-import { IsString, IsNotEmpty, IsOptional, IsNumber } from 'class-validator';
+import { IsString, IsNumber, IsOptional } from 'class-validator';
 
 export class CreateMenuItemDto {
   @IsNumber()
-  @IsNotEmpty()
   restaurantId: number;
 
   @IsString()
-  @IsNotEmpty()
   name: string;
 
   @IsString()
@@ -14,11 +12,9 @@ export class CreateMenuItemDto {
   description?: string;
 
   @IsString()
-  @IsNotEmpty()
   price: string;
 
   @IsString()
-  @IsNotEmpty()
   category: string;
 
   @IsString()
