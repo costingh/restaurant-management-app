@@ -8,10 +8,9 @@
 import { beforeAll, afterAll, afterEach, expect } from 'vitest';
 import { setupServer } from 'msw/node';
 import { cleanup } from '@testing-library/react';
-import matchers from '@testing-library/jest-dom/matchers';
+import '@testing-library/jest-dom';
 
-// Extend Vitest's expect with Testing Library's matchers
-expect.extend(matchers);
+// The import above automatically extends Vitest's expect with Testing Library's matchers
 
 // Clean up DOM after each test
 afterEach(() => {

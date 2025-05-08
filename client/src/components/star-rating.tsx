@@ -47,6 +47,7 @@ export function StarRating({ rating, setRating, size = 24, readonly = false }: S
         <Star
           key={star}
           size={size}
+          data-testid="star-icon"
           className={`cursor-${readonly ? 'default' : 'pointer'} mr-1 transition-all duration-150 ${
             // Fill the star if it's less than or equal to current rating or hover rating
             star <= (hoverRating || rating)
