@@ -1,9 +1,9 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { insertReviewSchema, type Review } from "@shared/schema";
+import { type Review } from "@/lib/types";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
@@ -14,8 +14,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StarRating } from "@/components/star-rating";
 
-// Extend the schema with client-side specific validation
-const reviewFormSchema = insertReviewSchema.extend({
+// Define review form schema
+const reviewFormSchema = z.object({
+  restaurantId: z.number(),
+  userId: z.number(),
   rating: z.number().min(1, "Rating is required").max(5),
   content: z.string().min(10, "Review content must be at least 10 characters").max(500, "Review content must be less than 500 characters"),
 });
@@ -48,16 +50,10 @@ export function ReviewForm({ restaurantId, userId, onSuccess, review }: ReviewFo
     mutationFn: async (data: FormData) => {
       if (review) {
         // Update existing review
-        return apiRequest<Review>(`/api/reviews/${review.id}`, {
-          method: "PATCH",
-          body: JSON.stringify(data),
-        });
+        return apiRequest(`/api/reviews/${review.id}`, "PATCH", data);
       } else {
         // Create new review
-        return apiRequest<Review>("/api/reviews", {
-          method: "POST",
-          body: JSON.stringify(data),
-        });
+        return apiRequest("/api/reviews", "POST", data);
       }
     },
     onSuccess: () => {

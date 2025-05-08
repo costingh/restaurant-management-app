@@ -25,6 +25,15 @@ export interface MenuItem {
   imageUrl?: string;
 }
 
+export interface Review {
+  id: number;
+  restaurantId: number;
+  userId: number;
+  rating: number;
+  content: string;
+  createdAt: string;
+}
+
 // Form states
 export interface LoginFormData {
   username: string;

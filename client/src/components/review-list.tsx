@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import React, { useState } from "react";
 import type { Review, User } from "@/lib/types";
 import { StarRating } from "@/components/star-rating";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
@@ -54,9 +54,7 @@ export function ReviewList({ restaurantId, currentUser, onEditReview }: ReviewLi
 
   const deleteMutation = useMutation({
     mutationFn: async (reviewId: number) => {
-      return apiRequest(`/api/reviews/${reviewId}`, {
-        method: "DELETE",
-      });
+      return apiRequest(`/api/reviews/${reviewId}`, "DELETE");
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/reviews'] });
