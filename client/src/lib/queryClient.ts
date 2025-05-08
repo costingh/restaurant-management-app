@@ -8,6 +8,12 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
 
 /**
+ * API server URL for backend requests
+ * Used when making API requests to the backend server
+ */
+export const API_BASE_URL = "http://localhost:4000";
+
+/**
  * Helper function to handle unsuccessful HTTP responses
  * Throws an error with status code and response text for better debugging
  * 
@@ -19,6 +25,23 @@ async function throwIfResNotOk(res: Response) {
     const text = (await res.text()) || res.statusText;
     throw new Error(`${res.status}: ${text}`);
   }
+}
+
+/**
+ * Function to build a complete API URL
+ * Ensures all API requests are directed to the backend server
+ * 
+ * @param path - The API path or URL
+ * @returns Full API URL with base URL prepended if needed
+ */
+function buildApiUrl(path: string): string {
+  // If it's already a full URL, return as is
+  if (path.startsWith('http')) {
+    return path;
+  }
+  
+  // Add base URL to the path
+  return `${API_BASE_URL}${path}`;
 }
 
 /**
@@ -43,12 +66,12 @@ export async function apiRequest<T = Response>(
   
   if (urlOrMethod.startsWith('/')) {
     // First param is URL (new style)
-    url = urlOrMethod;
+    url = buildApiUrl(urlOrMethod);
     method = methodOrUrl || "GET";
   } else {
     // First param is method (old style)
     method = urlOrMethod;
-    url = methodOrUrl || "";
+    url = methodOrUrl ? buildApiUrl(methodOrUrl) : "";
   }
 
   const res = await fetch(url, {
@@ -89,7 +112,10 @@ export const getQueryFn: <T>(options: {
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
     // Use the first item in the query key as the URL
-    const res = await fetch(queryKey[0] as string, {
+    const path = queryKey[0] as string;
+    const url = buildApiUrl(path);
+    
+    const res = await fetch(url, {
       credentials: "include", // Include cookies for authentication
     });
 
