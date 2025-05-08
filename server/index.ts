@@ -1,3 +1,14 @@
+/**
+ * Server Entry Point
+ * 
+ * This is the main entry file for the Express server that integrates with NestJS components.
+ * It initializes the server with all necessary middleware, authentication strategies,
+ * route handlers, and serves the frontend application.
+ * 
+ * The application uses a hybrid architecture, gradually migrating from Express to NestJS
+ * for better structure and maintainability while ensuring backward compatibility.
+ */
+
 import express, { type Request, Response, NextFunction } from "express";
 import session from "express-session";
 import passport from "passport";
