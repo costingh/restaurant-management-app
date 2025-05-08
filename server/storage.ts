@@ -14,6 +14,12 @@ import {
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and } from "drizzle-orm";
+import session from "express-session";
+import connectPg from "connect-pg-simple";
+import { pool } from "./db";
+
+// Create PostgreSQL session store
+const PostgresSessionStore = connectPg(session);
 
 // Storage interface with CRUD operations
 /**
@@ -23,6 +29,12 @@ import { eq, and } from "drizzle-orm";
  * providing a clean abstraction between the data layer and business logic.
  */
 export interface IStorage {
+  /**
+   * Session store for Express sessions
+   * Used to persist user sessions in the database
+   */
+  sessionStore: session.Store;
+  
   /**
    * User Operations
    * Methods for managing user accounts and authentication
@@ -193,7 +205,16 @@ export interface IStorage {
 
 // Database storage implementation
 export class DatabaseStorage implements IStorage {
+  // Session store for persisting user sessions
+  sessionStore: session.Store;
+  
   constructor() {
+    // Initialize session store
+    this.sessionStore = new PostgresSessionStore({
+      pool,
+      createTableIfMissing: true
+    });
+    
     // Initialize the database with a default admin user and example restaurants
     this.initializeData();
   }
