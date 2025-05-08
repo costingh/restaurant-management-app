@@ -1,10 +1,18 @@
 import { Injectable } from '@nestjs/common';
+import { 
+  User, 
+  InsertUser, 
+  Restaurant, 
+  InsertRestaurant, 
+  MenuItem, 
+  InsertMenuItem 
+} from '../../../shared/schema';
 import { db } from '../../db';
 import { eq } from 'drizzle-orm';
 import { 
-  users, restaurants, menuItems, 
-  type User, type Restaurant, type MenuItem,
-  type InsertUser, type InsertRestaurant, type InsertMenuItem 
+  users, 
+  restaurants, 
+  menuItems 
 } from '../../../shared/schema';
 
 @Injectable()
@@ -27,7 +35,7 @@ export class DatabaseService {
       .returning();
     return user;
   }
-  
+
   // Restaurant operations
   async getAllRestaurants(): Promise<Restaurant[]> {
     return db.select().from(restaurants);
@@ -62,14 +70,17 @@ export class DatabaseService {
       .returning({ id: restaurants.id });
     return result.length > 0;
   }
-  
+
   // Menu item operations
   async getAllMenuItems(): Promise<MenuItem[]> {
     return db.select().from(menuItems);
   }
 
   async getMenuItemsByRestaurant(restaurantId: number): Promise<MenuItem[]> {
-    return db.select().from(menuItems).where(eq(menuItems.restaurantId, restaurantId));
+    return db
+      .select()
+      .from(menuItems)
+      .where(eq(menuItems.restaurantId, restaurantId));
   }
 
   async getMenuItem(id: number): Promise<MenuItem | undefined> {
