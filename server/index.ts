@@ -9,6 +9,9 @@
  * for better structure and maintainability while ensuring backward compatibility.
  */
 
+// Import Express types extension
+import "./types";
+
 import express, { type Request, Response, NextFunction } from "express";
 import session from "express-session";
 import passport from "passport";
@@ -19,6 +22,7 @@ import { AuthService } from "./modules/auth/auth.service";
 import { UsersService } from "./modules/users/users.service";
 import { LocalStrategy } from "./modules/auth/strategies/local.strategy";
 import { SessionSerializer } from "./modules/auth/session.serializer";
+import { storage } from "./storage";
 
 // Create Express app
 const app = express();
@@ -41,7 +45,9 @@ app.use(
     cookie: {
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
       httpOnly: true,
+      secure: process.env.NODE_ENV === "production"
     },
+    store: storage.sessionStore
   })
 );
 

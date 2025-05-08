@@ -4,114 +4,23 @@ import { storage } from "./storage";
 import { 
   insertRestaurantSchema, 
   insertMenuItemSchema,
-  insertUserSchema,
   insertReviewSchema
 } from "@shared/schema";
 import { ZodError } from "zod";
-import session from "express-session";
-import MemoryStore from "memorystore";
+import { setupAuth } from "./auth";
 
 // Middleware to check if user is admin
 const isAdmin = (req: Request, res: Response, next: Function) => {
-  if (!req.session.user || !req.session.user.isAdmin) {
+  if (!req.isAuthenticated() || !req.user.isAdmin) {
     return res.status(403).json({ message: "Unauthorized access" });
   }
   next();
 };
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  const MemoryStoreSession = MemoryStore(session);
+  // Setup authentication with Passport
+  setupAuth(app);
   
-  // Session setup
-  app.use(session({
-    secret: process.env.SESSION_SECRET || "secret-key",
-    resave: false,
-    saveUninitialized: false,
-    cookie: { secure: process.env.NODE_ENV === "production" },
-    store: new MemoryStoreSession({
-      checkPeriod: 86400000 // Clear expired sessions every 24h
-    })
-  }));
-  
-  // Authentication routes
-  app.post("/api/login", async (req, res) => {
-    try {
-      const { username, password } = req.body;
-      
-      if (!username || !password) {
-        return res.status(400).json({ message: "Username and password are required" });
-      }
-      
-      const user = await storage.getUserByUsername(username);
-      
-      if (!user || user.password !== password) {
-        return res.status(401).json({ message: "Invalid credentials" });
-      }
-      
-      // Store user info in session (excluding password)
-      req.session.user = {
-        id: user.id,
-        username: user.username,
-        isAdmin: user.isAdmin
-      };
-      
-      return res.status(200).json({
-        id: user.id,
-        username: user.username,
-        isAdmin: user.isAdmin
-      });
-    } catch (error) {
-      console.error("Login error:", error);
-      return res.status(500).json({ message: "Server error" });
-    }
-  });
-  
-  app.post("/api/register", async (req, res) => {
-    try {
-      const userData = insertUserSchema.parse(req.body);
-      
-      // Check if username already exists
-      const existingUser = await storage.getUserByUsername(userData.username);
-      if (existingUser) {
-        return res.status(400).json({ message: "Username already exists" });
-      }
-      
-      // By default, new users are not admins unless explicitly set
-      const newUser = await storage.createUser({
-        ...userData,
-        isAdmin: userData.isAdmin || false
-      });
-      
-      // Return user without password
-      return res.status(201).json({
-        id: newUser.id,
-        username: newUser.username,
-        isAdmin: newUser.isAdmin
-      });
-    } catch (error) {
-      if (error instanceof ZodError) {
-        return res.status(400).json({ message: "Invalid user data", errors: error.errors });
-      }
-      console.error("Registration error:", error);
-      return res.status(500).json({ message: "Server error" });
-    }
-  });
-  
-  app.get("/api/logout", (req, res) => {
-    req.session.destroy((err) => {
-      if (err) {
-        return res.status(500).json({ message: "Error logging out" });
-      }
-      return res.status(200).json({ message: "Logged out successfully" });
-    });
-  });
-  
-  app.get("/api/current-user", (req, res) => {
-    if (!req.session.user) {
-      return res.status(401).json({ message: "Not authenticated" });
-    }
-    return res.status(200).json(req.session.user);
-  });
   
   // Restaurant routes
   app.get("/api/restaurants", async (req, res) => {
@@ -356,14 +265,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/reviews", async (req, res) => {
     try {
       // Check if user is authenticated
-      if (!req.session.user) {
+      if (!req.isAuthenticated()) {
         return res.status(401).json({ message: "You must be logged in to post a review" });
       }
       
       const reviewData = insertReviewSchema.parse(req.body);
       
       // Ensure the user can only post reviews as themselves
-      if (reviewData.userId !== req.session.user.id) {
+      if (reviewData.userId !== req.user.id) {
         return res.status(403).json({ message: "You can only post reviews as yourself" });
       }
       
@@ -387,7 +296,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch("/api/reviews/:id", async (req, res) => {
     try {
       // Check if user is authenticated
-      if (!req.session.user) {
+      if (!req.isAuthenticated()) {
         return res.status(401).json({ message: "You must be logged in to update a review" });
       }
       
@@ -403,7 +312,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Ensure the user can only update their own reviews (or is an admin)
-      if (existingReview.userId !== req.session.user.id && !req.session.user.isAdmin) {
+      if (existingReview.userId !== req.user.id && !req.user.isAdmin) {
         return res.status(403).json({ message: "You can only update your own reviews" });
       }
       
@@ -432,7 +341,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete("/api/reviews/:id", async (req, res) => {
     try {
       // Check if user is authenticated
-      if (!req.session.user) {
+      if (!req.isAuthenticated()) {
         return res.status(401).json({ message: "You must be logged in to delete a review" });
       }
       
@@ -448,7 +357,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Ensure the user can only delete their own reviews (or is an admin)
-      if (existingReview.userId !== req.session.user.id && !req.session.user.isAdmin) {
+      if (existingReview.userId !== req.user.id && !req.user.isAdmin) {
         return res.status(403).json({ message: "You can only delete your own reviews" });
       }
       
