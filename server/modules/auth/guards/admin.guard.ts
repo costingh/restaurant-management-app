@@ -1,15 +1,14 @@
-import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from '@nestjs/common';
-import { Request } from 'express';
+import { ExecutionContext, Injectable, CanActivate, ForbiddenException } from '@nestjs/common';
 import { User } from '../../../shared/schema';
 
 @Injectable()
 export class AdminGuard implements CanActivate {
   canActivate(context: ExecutionContext): boolean {
-    const request = context.switchToHttp().getRequest<Request>();
+    const request = context.switchToHttp().getRequest();
     const user = request.user as User;
     
-    if (!user?.isAdmin) {
-      throw new ForbiddenException('Admin access required');
+    if (!user || !user.isAdmin) {
+      throw new ForbiddenException('Admin privileges required');
     }
     
     return true;
