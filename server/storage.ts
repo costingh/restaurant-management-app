@@ -33,6 +33,15 @@ export interface IStorage {
   createMenuItem(menuItem: InsertMenuItem): Promise<MenuItem>;
   updateMenuItem(id: number, menuItem: Partial<InsertMenuItem>): Promise<MenuItem | undefined>;
   deleteMenuItem(id: number): Promise<boolean>;
+  
+  // Review operations
+  getAllReviews(): Promise<Review[]>;
+  getReviewsByRestaurant(restaurantId: number): Promise<Review[]>;
+  getReviewsByUser(userId: number): Promise<Review[]>;
+  getReview(id: number): Promise<Review | undefined>;
+  createReview(review: InsertReview): Promise<Review>;
+  updateReview(id: number, review: Partial<InsertReview>): Promise<Review | undefined>;
+  deleteReview(id: number): Promise<boolean>;
 }
 
 // Database storage implementation
@@ -163,6 +172,50 @@ export class DatabaseStorage implements IStorage {
 
   async deleteMenuItem(id: number): Promise<boolean> {
     const result = await db.delete(menuItems).where(eq(menuItems.id, id)).returning();
+    return result.length > 0;
+  }
+
+  // Review operations
+  async getAllReviews(): Promise<Review[]> {
+    return await db.select().from(reviews);
+  }
+
+  async getReviewsByRestaurant(restaurantId: number): Promise<Review[]> {
+    return await db
+      .select()
+      .from(reviews)
+      .where(eq(reviews.restaurantId, restaurantId));
+  }
+
+  async getReviewsByUser(userId: number): Promise<Review[]> {
+    return await db
+      .select()
+      .from(reviews)
+      .where(eq(reviews.userId, userId));
+  }
+
+  async getReview(id: number): Promise<Review | undefined> {
+    const [review] = await db.select().from(reviews).where(eq(reviews.id, id));
+    return review;
+  }
+
+  async createReview(insertReview: InsertReview): Promise<Review> {
+    const [review] = await db.insert(reviews).values(insertReview).returning();
+    return review;
+  }
+
+  async updateReview(id: number, updateData: Partial<InsertReview>): Promise<Review | undefined> {
+    const [updatedReview] = await db
+      .update(reviews)
+      .set(updateData)
+      .where(eq(reviews.id, id))
+      .returning();
+    
+    return updatedReview;
+  }
+
+  async deleteReview(id: number): Promise<boolean> {
+    const result = await db.delete(reviews).where(eq(reviews.id, id)).returning();
     return result.length > 0;
   }
 }
