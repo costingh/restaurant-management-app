@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import { DatabaseService } from '../database/database.service';
 import { 
-  type Restaurant, 
-  type InsertRestaurant
+  Restaurant, 
+  InsertRestaurant 
 } from '../../../shared/schema';
+import { DatabaseService } from '../database/database.service';
 
 @Injectable()
 export class RestaurantsService {

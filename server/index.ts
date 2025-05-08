@@ -1,11 +1,53 @@
 import express, { type Request, Response, NextFunction } from "express";
+import session from "express-session";
+import passport from "passport";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { DatabaseService } from "./modules/database/database.service";
+import { AuthService } from "./modules/auth/auth.service";
+import { UsersService } from "./modules/users/users.service";
+import { LocalStrategy } from "./modules/auth/strategies/local.strategy";
+import { SessionSerializer } from "./modules/auth/session.serializer";
 
+// Create Express app
 const app = express();
+
+// Set up middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
+// Create services
+const databaseService = new DatabaseService();
+const usersService = new UsersService(databaseService);
+const authService = new AuthService(usersService);
+
+// Session middleware
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET || "dev-secret-key",
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      maxAge: 24 * 60 * 60 * 1000, // 24 hours
+      httpOnly: true,
+    },
+  })
+);
+
+// Passport setup
+app.use(passport.initialize());
+app.use(passport.session());
+
+// Configure passport local strategy
+const localStrategy = new LocalStrategy(authService);
+passport.use(localStrategy);
+
+// Configure session serializer
+const sessionSerializer = new SessionSerializer(usersService);
+passport.serializeUser(sessionSerializer.serializeUser.bind(sessionSerializer));
+passport.deserializeUser(sessionSerializer.deserializeUser.bind(sessionSerializer));
+
+// Logging middleware
 app.use((req, res, next) => {
   const start = Date.now();
   const path = req.path;
@@ -36,29 +78,27 @@ app.use((req, res, next) => {
   next();
 });
 
+// Start the application
 (async () => {
   const server = await registerRoutes(app);
 
+  // Error handler
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
 
     res.status(status).json({ message });
-    throw err;
+    console.error(err);
   });
 
-  // importantly only setup vite in development and after
-  // setting up all the other routes so the catch-all route
-  // doesn't interfere with the other routes
+  // Setup Vite for development or serve static files in production
   if (app.get("env") === "development") {
     await setupVite(app, server);
   } else {
     serveStatic(app);
   }
 
-  // ALWAYS serve the app on port 5000
-  // this serves both the API and the client.
-  // It is the only port that is not firewalled.
+  // Start server
   const port = 5000;
   server.listen({
     port,
