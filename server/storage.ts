@@ -2,12 +2,15 @@ import {
   users,
   restaurants,
   menuItems,
+  reviews,
   type User,
   type InsertUser,
   type Restaurant,
   type InsertRestaurant,
   type MenuItem,
-  type InsertMenuItem
+  type InsertMenuItem,
+  type Review,
+  type InsertReview
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and } from "drizzle-orm";
