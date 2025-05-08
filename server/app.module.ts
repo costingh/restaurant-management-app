@@ -5,6 +5,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { RestaurantsModule } from './modules/restaurants/restaurants.module';
 import { MenuItemsModule } from './modules/menu-items/menu-items.module';
 import { DatabaseModule } from './modules/database/database.module';
+import { ReviewsModule } from './modules/reviews/reviews.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { DatabaseModule } from './modules/database/database.module';
     AuthModule,
     RestaurantsModule,
     MenuItemsModule,
+    ReviewsModule,
   ],
 })
 export class AppModule {}

@@ -5,7 +5,9 @@ import {
   Restaurant,
   InsertRestaurant,
   MenuItem,
-  InsertMenuItem
+  InsertMenuItem,
+  Review,
+  InsertReview
 } from '../../../shared/schema';
 import { storage } from '../../storage';
 
@@ -78,5 +80,34 @@ export class DatabaseService implements OnModuleInit {
 
   async deleteMenuItem(id: number): Promise<boolean> {
     return storage.deleteMenuItem(id);
+  }
+
+  // Review operations
+  async getAllReviews(): Promise<Review[]> {
+    return storage.getAllReviews();
+  }
+
+  async getReviewsByRestaurant(restaurantId: number): Promise<Review[]> {
+    return storage.getReviewsByRestaurant(restaurantId);
+  }
+
+  async getReviewsByUser(userId: number): Promise<Review[]> {
+    return storage.getReviewsByUser(userId);
+  }
+
+  async getReview(id: number): Promise<Review | undefined> {
+    return storage.getReview(id);
+  }
+
+  async createReview(createReviewDto: InsertReview): Promise<Review> {
+    return storage.createReview(createReviewDto);
+  }
+
+  async updateReview(id: number, updateReviewDto: Partial<InsertReview>): Promise<Review | undefined> {
+    return storage.updateReview(id, updateReviewDto);
+  }
+
+  async deleteReview(id: number): Promise<boolean> {
+    return storage.deleteReview(id);
   }
 }
