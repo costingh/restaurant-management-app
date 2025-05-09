@@ -54,7 +54,7 @@ export function Layout({ children }: LayoutProps) {
 
   // Fetch current user info
   const { data: user } = useQuery<User>({
-    queryKey: ["/api/current-user"],
+    queryKey: ["/api/users/current-user"],
     onError: () => {
       // Silently fail - user is not logged in
     },
@@ -149,10 +149,10 @@ export function Layout({ children }: LayoutProps) {
                   </Button>
                 ) : (
                   <NavItem
-                    href="/login"
+                    href="/auth"
                     icon={<UserIcon className="h-5 w-5" />}
                     label="Login"
-                    active={location === "/login"}
+                    active={location === "/auth"}
                     onClick={() => setSidebarOpen(false)}
                   />
                 )}
@@ -176,7 +176,7 @@ export function Layout({ children }: LayoutProps) {
             </div>
           ) : (
             <Button asChild variant="outline" size="sm">
-              <Link href="/login">Login</Link>
+              <Link href="/auth">Login</Link>
             </Button>
           )}
         </div>
@@ -253,7 +253,7 @@ export function Layout({ children }: LayoutProps) {
               </div>
             ) : (
               <Button asChild className="w-full">
-                <Link href="/login">Login</Link>
+                <Link href="/auth">Login</Link>
               </Button>
             )}
           </div>

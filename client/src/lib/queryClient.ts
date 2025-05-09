@@ -11,7 +11,7 @@ import { QueryClient, QueryFunction } from "@tanstack/react-query";
  * API server URL for backend requests
  * Used when making API requests to the backend server
  */
-export const API_BASE_URL = "http://localhost:4000";
+export const API_BASE_URL = "http://localhost:5001";
 
 /**
  * Helper function to handle unsuccessful HTTP responses

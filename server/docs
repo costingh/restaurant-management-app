@@ -1,0 +1,6 @@
+nest generate module menu-items && nest generate controller menu-items && nest generate service menu-items
+
+nest generate module restaurants && nest generate controller restaurants && nest generate service restaurants
+
+nest generate module users && nest generate controller users && nest generate service users
+

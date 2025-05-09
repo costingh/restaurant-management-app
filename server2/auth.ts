@@ -126,7 +126,7 @@ export function setupAuth(app: Express) {
   });
 
   // Login user
-  app.post("/api/login", passport.authenticate("local"), (req, res) => {
+  app.post("/api/auth/login", passport.authenticate("local"), (req, res) => {
     res.status(200).json(req.user);
   });
 

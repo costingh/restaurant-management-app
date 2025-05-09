@@ -86,7 +86,7 @@ const server = setupServer(
   }),
   
   // Mock current user
-  http.get('/api/current-user', () => {
+  http.get('/api/users/current-user', () => {
     return HttpResponse.json({
       id: 1,
       username: 'testuser',

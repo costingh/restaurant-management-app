@@ -71,7 +71,7 @@ The application uses four main entities:
 
 - `POST /api/login` - Authenticate a user
 - `POST /api/logout` - Log out the current user
-- `GET /api/current-user` - Get the currently logged-in user
+- `GET /api/users/current-user` - Get the currently logged-in user
 
 ### Restaurants
 

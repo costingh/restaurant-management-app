@@ -38,10 +38,10 @@ export default function RestaurantDetails() {
   
   // Fetch current user
   const { data: currentUser } = useQuery<User | null>({
-    queryKey: ['/api/current-user'],
+    queryKey: ['/api/users/current-user'],
     queryFn: async () => {
       try {
-        const res = await fetch('/api/current-user');
+        const res = await fetch('/api/users/current-user');
         if (res.status === 401) return null;
         if (!res.ok) throw new Error('Failed to fetch current user');
         return res.json();
@@ -254,7 +254,7 @@ export default function RestaurantDetails() {
               <CardContent className="p-6 text-center">
                 <p className="mb-4">Please log in to write a review</p>
                 <Button asChild variant="outline">
-                  <Link href="/login">
+                  <Link href="/auth">
                     Log In
                   </Link>
                 </Button>

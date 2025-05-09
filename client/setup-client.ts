@@ -45,7 +45,7 @@ async function startVite() {
     
     console.log('Frontend server running at:');
     server.printUrls();
-    console.log('\nConnect to the API server at http://localhost:4000/api');
+    console.log('\nConnect to the API server at http://localhost:5001/api');
   } catch (error) {
     console.error('Error starting Vite server:', error);
     process.exit(1);

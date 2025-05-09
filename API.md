@@ -60,7 +60,7 @@ No content
 #### Get Current User
 
 ```
-GET /api/current-user
+GET /api/users/current-user
 ```
 
 Returns information about the currently authenticated user.
