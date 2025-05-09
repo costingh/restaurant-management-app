@@ -27,7 +27,7 @@ const scryptAsync = promisify(scrypt);
  * @param password The plain-text password to hash
  * @returns A string with the format "{hash}.{salt}"
  */
-async function hashPassword(password: string) {
+export async function hashPassword(password: string) {
   const salt = randomBytes(16).toString("hex");
   const buf = (await scryptAsync(password, salt, 64)) as Buffer;
   return `${buf.toString("hex")}.${salt}`;

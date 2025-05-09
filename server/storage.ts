@@ -224,9 +224,12 @@ export class DatabaseStorage implements IStorage {
       // Check if we have users, if not add a default admin
       const existingUsers = await db.select().from(users);
       if (existingUsers.length === 0) {
+        // Import the hashPassword function
+        const { hashPassword } = await import('./auth');
+        
         await this.createUser({
           username: "admin",
-          password: "admin123",
+          password: await hashPassword("admin123"),
           isAdmin: true
         });
       }
